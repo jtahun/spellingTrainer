@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Орфографический тренажёр</title>
+
+<link rel="manifest" href="manifest.json">
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0; padding: 20px;
+  background: #f5f5f5;
+}
+#app { max-width: 600px; margin: auto; }
+.card {
+  background: white; padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+input {
+  width: 100%; padding: 10px;
+  font-size: 20px;
+  margin-top: 10px;
+}
+button {
+  width: 100%; padding: 14px;
+  font-size: 18px;
+  margin-top: 15px;
+  border: none;
+  background: #2196f3;
+  color: white;
+  border-radius: 6px;
+}
+.red { color: red; font-weight: bold; }
+.word { font-size: 22px; }
+.result-line {
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <h2>Орфографический тренажёр</h2>
+
+  <div id="game" class="card">
+    <div id="wrongWord" class="word"></div>
+    <input id="userInput" placeholder="Введите правильное слово">
+    <button onclick="nextWord()">OK</button>
+  </div>
+
+  <div id="results" class="card" style="display:none;"></div>
+  <button id="restartBtn" onclick="startGame()" style="display:none;">Начать заново</button>
+
+</div>
+
+<script>
+// -------- Загрузка слов --------
+const WORDS = [
+  ["автомобиль","афтомобил"],
+  ["агроном","аграном"],
+  ["адрес","адрис"],
+  ["аллея","алея"],
+  ["аппетит","апетит"],
+
+  ["багаж","багаш"],
+  ["беседа","биседа"],
+  ["беседовать","биседовать"],
+  ["библиотека","библеотека"],
+  ["библиотекарь","библеотекарь"],
+  ["билет","белет"],
+  ["богатство","багатсво"],
+  ["ботинки","батинки"],
+
+  ["вагон","вогон"],
+  ["везде","везде"],
+  ["велосипед","велосепед"],
+  ["вокзал","вакзал"],
+  ["впереди","впереди"],
+  ["вчера","вчера"],
+  ["газета","газета"],
+  ["гореть","гареть"],
+  ["горизонт","горизонт"],
+
+  ["двадцать","20"],
+  ["двенадцать","12"],
+  ["директор","деректор"],
+
+  ["ещё","ещё"],
+  ["железо","жилезо"],
+  ["завтра","зафтра"],
+
+  ["здесь","сдесь"],
+
+  ["издалека","издолека"],
+  ["инженер","инженер"],
+
+  ["календарь","календарь"],
+  ["каникулы","каникулы"],
+  ["кастрюля","кастрюля"],
+  ["километр","киламетр"],
+  ["командир","камандир"],
+  ["комбайн","комбайн"],
+  ["комбайнёр","комбайнёр"],
+  ["корабль","карабль"],
+  ["космонавт","касмонафт"],
+  ["костёр","костёр"],
+  ["косить","касить"],
+
+  ["лучше","лутше"],
+
+  ["медленно","медлено"],
+  ["металл","метал"],
+
+  ["назад","назад"],
+  ["налево","налево"],
+  ["направо","направо"],
+
+  ["оборона","абарона"],
+  ["одиннадцать","11"],
+
+  ["пассажир","пасажир"],
+  ["пассажирский","пасажирский"],
+  ["пейзаж","пейзаж"],
+  ["победа","пабеда"],
+  ["пожалуйста","пажалуста"],
+  ["портрет","портрет"],
+
+  ["правительство","правитильство"],
+  ["председатель","придседатиль"],
+  ["прекрасный","прикрасный"],
+  ["путешественник","путишествинник"],
+  ["путешествие","путишевствие"],
+
+  ["расстояние","растояние"],
+
+  ["салют","салют"],
+  ["сверкать","свиркать"],
+  ["сверху","сверху"],
+  ["свитер","свитор"],
+  ["свобода","свабода"],
+  ["сегодня","севодня"],
+  ["сейчас","сейчаc"],
+  ["семена","симина"],
+  ["справа","справо"],
+  ["слева","слево"],
+
+  ["тарелка","тарелка"],
+  ["телефон","телифон"],
+  ["теперь","теперь"],
+  ["тепловоз","теплавоз"],
+
+  ["хлебороб","хлебароб"],
+  ["хозяин","хазяин"],
+  ["хозяйство","хазяйство"],
+
+  ["человек","челавек"],
+
+  ["шестнадцать","16"],
+  ["шофёр","шофёр"],
+
+  ["экскурсия","экскурссия"],
+  ["электричество","электричиство"],
+  ["электростанция","электростанция"]
+];
+
+let round = [];
+let index = 0;
+let answers = [];
+
+// Выбор 17 случайных слов
+function pickRandomWords() {
+  let arr = [...WORDS];
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, 17);
+}
+
+function startGame() {
+  round = pickRandomWords();
+  index = 0;
+  answers = [];
+
+  document.getElementById('results').style.display = "none";
+  document.getElementById('restartBtn').style.display = "none";
+  document.getElementById('game').style.display = "block";
+
+  showWord();
+}
+
+function showWord() {
+  document.getElementById('wrongWord').innerText = round[index][1];
+  document.getElementById('userInput').value = "";
+  document.getElementById('userInput').focus();
+}
+
+function nextWord() {
+  const val = document.getElementById('userInput').value.trim();
+  answers.push(val);
+
+  index++;
+  if (index < round.length) {
+    showWord();
+  } else {
+    finish();
+  }
+}
+
+// Подсветка ошибок
+function diff(correct, user) {
+  let result = "";
+  for (let i = 0; i < correct.length; i++) {
+    if (user[i] !== correct[i]) {
+      result += `<span class="red">${user[i] ? user[i] : "_"}</span>`;
+    } else {
+      result += user[i];
+    }
+  }
+  return result;
+}
+
+function finish() {
+  document.getElementById('game').style.display = "none";
+
+  let errors = 0;
+  let html = "<h3>Результаты</h3>";
+
+  for (let i = 0; i < round.length; i++) {
+    const correct = round[i][0];
+    const user = answers[i];
+
+    let line = "";
+    if (correct !== user) errors++;
+
+    line += `<div class="result-line"><b>${correct}</b> → ${diff(correct, user)}</div>`;
+    html += line;
+  }
+
+  // Оценка
+  let grade;
+  if (errors === 0) grade = 5;
+  else if (errors === 1) grade = "4";
+  else if (errors === 2) grade = "4-";
+  else if (errors === 3) grade = "3";
+  else grade = "2";
+
+  html += `<h2 class="red">Ваша оценка: ${grade}</h2>`;
+
+  document.getElementById('results').innerHTML = html;
+  document.getElementById('results').style.display = "block";
+  document.getElementById('restartBtn').style.display = "block";
+}
+
+startGame();
+</script>
+
+</body>
+</html>
