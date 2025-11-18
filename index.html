@@ -88,18 +88,30 @@
 
   <h2>Орфографический тренажёр</h2>
 
-   <div id="previewCard" class="card" style="display:none;">
-    <div class="small">      
+  <!-- Блок предпросмотра слов -->
+  <div id="previewCard" class="card" style="display:none;">
+    <div class="small">
       нажмите «Старт» при готовности,<br>
 	  автостарт через 2 минуты.
     </div>
     <ol id="previewList"></ol>
     <button id="startBtn">Старт</button>
+  </div>
+  <!-- конец блока предпросмотра -->
+
+  <div id="game" class="card">
+    <div class="small">Напишите правильное слово.</div>
+    <div id="wrongWord" class="word"></div>
+    <input id="userInput" placeholder="Введите правильное слово" autocomplete="off" />
+    <button id="okBtn">OK</button>
+    <div class="small" id="progress"></div>
+  </div>
 
   <div id="results" class="card" style="display:none;"></div>
   <button id="restartBtn" style="display:none;">Начать тур заново</button>
 
 </div>
+
 
 <script>
 const WORDS = [
