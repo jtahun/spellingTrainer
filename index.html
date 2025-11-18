@@ -15,44 +15,71 @@
   </script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
-      background: #f5f5f5;
-    }
-    #app { max-width: 600px; margin: auto; }
-    h2 { text-align: center; }
-    .card {
-      background: #ffffff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    input {
-      width: 100%; padding: 10px;
-      font-size: 20px;
-      margin-top: 10px;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%; padding: 14px;
-      font-size: 18px;
-      margin-top: 15px;
-      border: none;
-      background: #2196f3;
-      color: #ffffff;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:active { transform: scale(0.98); }
-    .red { color: red; font-weight: bold; }
-    .word { font-size: 22px; margin-bottom: 10px; }
-    .result-line {
-      margin-bottom: 8px;
-      font-size: 18px;
-    }
-    .small { font-size: 14px; color: #555; }
+   body {
+     font-family: Arial, sans-serif;
+     margin: 0;
+     padding: 20px;
+     background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+   }
+   #app {
+     max-width: 600px;
+     margin: auto;
+   }
+   h2 {
+     text-align: center;
+     color: #2e7d32;
+   }
+   .card {
+     background: #ffffff;
+     padding: 20px;
+     margin-bottom: 20px;
+     border-radius: 16px;
+     box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+     border-top: 4px solid #ffcc80;
+   }
+   input {
+     width: 100%;
+     padding: 10px;
+     font-size: 20px;
+     margin-top: 10px;
+     box-sizing: border-box;
+     border-radius: 8px;
+     border: 1px solid #cfd8dc;
+   }
+   button {
+     width: 100%;
+     padding: 14px;
+     font-size: 18px;
+     margin-top: 15px;
+     border: none;
+     background: #4caf50;
+     color: #ffffff;
+     border-radius: 8px;
+     cursor: pointer;
+   }
+   button:active {
+     transform: scale(0.98);
+   }
+   button:hover {
+     opacity: 0.95;
+   }
+   .red {
+     color: #e53935;
+     font-weight: bold;
+   }
+   .word {
+     font-size: 22px;
+     margin-bottom: 10px;
+   }
+   .result-line {
+     margin-bottom: 8px;
+     font-size: 18px;
+   }
+   .small {
+     font-size: 14px;
+     color: #555;
+}
+
   </style>
 </head>
 
@@ -61,13 +88,13 @@
 
   <h2>Орфографический тренажёр</h2>
 
-  <div id="game" class="card">
-    <div class="small">Напишите правильное слово.</div>
-    <div id="wrongWord" class="word"></div>
-    <input id="userInput" placeholder="Введите правильное слово" autocomplete="off" />
-    <button id="okBtn">OK</button>
-    <div class="small" id="progress"></div>
-  </div>
+   <div id="previewCard" class="card" style="display:none;">
+    <div class="small">      
+      нажмите «Старт» при готовности,<br>
+	  автостарт через 2 минуты.
+    </div>
+    <ol id="previewList"></ol>
+    <button id="startBtn">Старт</button>
 
   <div id="results" class="card" style="display:none;"></div>
   <button id="restartBtn" style="display:none;">Начать тур заново</button>
@@ -76,7 +103,7 @@
 
 <script>
 const WORDS = [
-  ["автомобиль","афтомобил"],
+  ["автомобиль","афтомабиль"],
   ["агроном","аграном"],
   ["адрес","адрис"],
   ["аллея","алея"],
@@ -186,6 +213,7 @@ const WORDS = [
 let round = [];
 let index = 0;
 let answers = [];
+let previewTimer = null;
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -201,17 +229,53 @@ function pickRandomWords() {
   return arr.slice(0, 17);
 }
 
-function startGame() {
+// инициализация нового тура (выбор слов)
+function initRound() {
   round = pickRandomWords();
   index = 0;
   answers = [];
+}
 
+// показать все слова в правильном написании перед началом
+function showPreview() {
+  initRound();
+
+  const list = document.getElementById('previewList');
+  list.innerHTML = round
+    .map((pair, idx) => `<li>${pair[0]}</li>`)
+    .join('');
+
+  document.getElementById('previewCard').style.display = "block";
+  document.getElementById('game').style.display = "none";
   document.getElementById('results').style.display = "none";
   document.getElementById('restartBtn').style.display = "none";
+
+  // таймер на 3 минуты (3 * 60 * 1000 мс)
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(startQuiz, 2 * 60 * 1000);
+}
+
+// запуск основного режима (ввод, проверка, оценка)
+function startQuiz() {
+  if (previewTimer) {
+    clearTimeout(previewTimer);
+    previewTimer = null;
+  }
+
+  index = 0;
+  answers = [];
+
+  document.getElementById('previewCard').style.display = "none";
   document.getElementById('game').style.display = "block";
 
   showWord();
 }
+
+// старт игры (для первого запуска и для кнопки "Начать тур заново")
+function startGame() {
+  showPreview();
+}
+
 
 function showWord() {
   const pair = round[index];
@@ -288,6 +352,7 @@ document.getElementById('userInput').addEventListener('keydown', function(e){
   if (e.key === 'Enter') nextWord();
 });
 document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('startBtn').addEventListener('click', startQuiz);
 
 startGame();
 </script>
