@@ -102,7 +102,7 @@
   <div id="game" class="card">
     <div class="small">Напишите правильное слово.</div>
     <div id="wrongWord" class="word"></div>
-    <input id="userInput" placeholder="Введите правильное слово" autocomplete="off" />
+    <input id="userInput" placeholder="Введите правильное слово" autocomplete="off" autocorrect="off"  autocapitalize="none" spellcheck="false" />
     <button id="okBtn">OK</button>
     <div class="small" id="progress"></div>
   </div>
@@ -362,6 +362,9 @@ function finish() {
 document.getElementById('okBtn').addEventListener('click', nextWord);
 document.getElementById('userInput').addEventListener('keydown', function(e){
   if (e.key === 'Enter') nextWord();
+});
+document.getElementById('userInput').addEventListener('input', function () {
+    this.value = this.value.toLowerCase();
 });
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('startBtn').addEventListener('click', startQuiz);
